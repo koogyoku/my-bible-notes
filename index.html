@@ -2,91 +2,117 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>我的圣经笔记空间</title>
+    <title>圣经笔记库</title>
     <style>
-        body { font-family: sans-serif; margin: 0; display: flex; height: 100vh; background: #f4f4f4; }
-        /* 布局控制 */
-        .bible-reader { width: 50%; border-right: 2px solid #ddd; display: flex; flex-direction: column; background: white; }
-        .note-editor { width: 50%; padding: 20px; display: flex; flex-direction: column; background: #fafafa; }
+        body { font-family: "Microsoft YaHei", sans-serif; margin: 0; display: flex; height: 100vh; background: #f0f2f5; }
+        /* 布局 */
+        .bible-container { width: 50%; border-right: 2px solid #ddd; display: flex; flex-direction: column; background: white; }
+        .note-container { width: 50%; padding: 20px; display: flex; flex-direction: column; background: #fafafa; }
         
-        /* 头部样式 */
-        header { background: #333; color: white; padding: 15px; text-align: center; }
-        
-        /* 圣经内容区 */
-        #bible-content { flex: 1; overflow-y: auto; padding: 20px; line-height: 1.8; }
-        .verse { cursor: pointer; padding: 2px 5px; border-radius: 3px; }
-        .verse:hover { background: #e0f0ff; color: #007bff; }
+        /* 导航栏 */
+        .bible-nav { background: #333; color: white; padding: 10px; display: flex; gap: 10px; }
+        select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
 
-        /* 编辑器样式 */
-        textarea { flex: 1; padding: 15px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; resize: none; }
+        /* 圣经内容 */
+        #bible-display { flex: 1; overflow-y: auto; padding: 25px; line-height: 1.8; font-size: 18px; }
+        .verse-item { cursor: pointer; padding: 8px; transition: 0.2s; border-bottom: 1px solid #eee; }
+        .verse-item:hover { background: #f0f7ff; color: #007bff; }
+        .verse-num { font-weight: bold; color: #999; margin-right: 10px; font-size: 0.8em; }
+
+        /* 编辑器 */
+        textarea { flex: 1; padding: 20px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; resize: none; line-height: 1.6; outline: none; }
+        textarea:focus { border-color: #007bff; }
         .controls { margin-top: 15px; display: flex; gap: 10px; }
         
-        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; transition: 0.3s; }
+        button { padding: 12px 24px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; }
         .btn-save { background: #28a745; color: white; }
-        .btn-publish { background: #007bff; color: white; }
-        .btn-save:hover { background: #218838; }
+        .btn-export { background: #007bff; color: white; }
+        button:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
 
-    <div class="bible-reader">
-        <header>📖 圣经阅读 (和合本示例)</header>
-        <div id="bible-content">
-            <h3>创世记 1章</h3>
-            <p>
-                <span class="verse" onclick="copyVerse('创 1:1 起初，神创造天地。')">1 起初，神创造天地。</span><br>
-                <span class="verse" onclick="copyVerse('创 1:2 地是空虚混沌，渊面黑暗；神的灵运行在水面上。')">2 地是空虚混沌，渊面黑暗；神的灵运行在水面上。</span><br>
-                <span class="verse" onclick="copyVerse('创 1:3 神说：“要有光”，就有了光。')">3 神说：“要有光”，就有了光。</span>
-            </p>
-            <p style="color: #888; font-size: 0.9em;">(点击经文可快速插入笔记)</p>
+    <div class="bible-container">
+        <div class="bible-nav">
+            <select id="book-select" onchange="loadChapters()"></select>
+            <select id="chapter-select" onchange="fetchBibleText()"></select>
         </div>
+        <div id="bible-display">正在加载目录...</div>
     </div>
 
-    <div class="note-editor">
-        <header>✍️ 我的灵修笔记</header>
-        <p>一边品饮一杯好的 **puerh**，一边记录你的心得：</p>
-        <textarea id="note-input" placeholder="在这里输入你的笔记..."></textarea>
-        
+    <div class="note-container">
+        <textarea id="note-input" placeholder="点击左侧经文自动引用，在此输入笔记心得..."></textarea>
         <div class="controls">
-            <button class="btn-save" onclick="saveNote()">保存到本地</button>
-            <button class="btn-publish" onclick="publishNote()">发表/导出</button>
+            <button class="btn-save" onclick="saveNote()">保存笔记</button>
+            <button class="btn-export" onclick="exportNote()">导出为文件</button>
         </div>
     </div>
 
     <script>
-        // 自动加载上次保存的笔记
-        window.onload = () => {
-            document.getElementById('note-input').value = localStorage.getItem('bible_note') || '';
-        };
+        const bookNames = ["创世记", "出埃及记", "利未记", "民数记", "申记记", "约书亚记", "士师记", "路得记", "撒母耳记上", "撒母耳记下", "列王纪上", "列王纪下", "历代志上", "历代志下", "以斯拉记", "尼希米记", "以斯帖记", "约伯记", "诗篇", "箴言", "传道书", "雅歌", "以赛亚书", "耶利米书", "耶利米哀歌", "以西结书", "但以理书", "何西阿书", "约珥书", "阿摩司书", "俄巴底亚书", "约拿书", "弥迦书", "那鸿书", "哈巴谷书", "西番雅书", "哈该书", "撒迦利亚书", "玛拉基书", "马太福音", "马可福音", "路加福音", "约翰福音", "使徒行传", "罗马书", "哥林多前书", "哥林多后书", "加拉太书", "以弗所书", "腓立比书", "歌罗西书", "帖撒罗尼迦前书", "帖撒罗尼迦后书", "提摩太前书", "提摩太后书", "提多书", "腓利门书", "希伯来书", "雅各书", "彼得前书", "彼得后书", "约翰一书", "约翰二书", "约翰三书", "犹大书", "启示录"];
+        const chapterCounts = [50, 40, 27, 36, 34, 24, 21, 4, 31, 24, 22, 25, 29, 36, 10, 13, 10, 42, 150, 31, 12, 8, 66, 52, 5, 48, 12, 14, 3, 9, 1, 4, 7, 3, 3, 3, 2, 14, 4, 28, 16, 24, 21, 28, 16, 16, 13, 6, 6, 4, 4, 5, 3, 6, 4, 3, 1, 13, 5, 5, 3, 5, 1, 1, 1, 22];
 
-        // 点击经文自动插入编辑器
-        function copyVerse(text) {
+        function initNav() {
+            const bSelect = document.getElementById('book-select');
+            bookNames.forEach((name, index) => {
+                bSelect.add(new Option(name, index));
+            });
+            loadChapters();
+        }
+
+        function loadChapters() {
+            const bIndex = document.getElementById('book-select').value;
+            const cSelect = document.getElementById('chapter-select');
+            cSelect.innerHTML = "";
+            for(let i=1; i<=chapterCounts[bIndex]; i++) {
+                cSelect.add(new Option("第 " + i + " 章", i));
+            }
+            fetchBibleText();
+        }
+
+        async function fetchBibleText() {
+            const book = bookNames[document.getElementById('book-select').value];
+            const chapter = document.getElementById('chapter-select').value;
+            const display = document.getElementById('bible-display');
+            display.innerHTML = "正在加载经文...";
+            try {
+                const response = await fetch(`https://bible-api.com/${book}${chapter}?translation=cuv`);
+                const data = await response.json();
+                display.innerHTML = `<h2 style="border-bottom:2px solid #333; padding-bottom:10px;">${data.reference}</h2>`;
+                data.verses.forEach(v => {
+                    display.innerHTML += `
+                        <div class="verse-item" onclick="addNote('${book} ${chapter}:${v.verse} ${v.text.trim()}')">
+                            <span class="verse-num">${v.verse}</span>${v.text}
+                        </div>`;
+                });
+            } catch (e) {
+                display.innerHTML = "加载失败，请检查网络。";
+            }
+        }
+
+        function addNote(text) {
             const editor = document.getElementById('note-input');
-            editor.value += "\n> " + text + "\n";
+            editor.value += `\n> ${text}\n`;
             editor.focus();
         }
 
-        // 保存到浏览器缓存
         function saveNote() {
-            const content = document.getElementById('note-input').value;
-            localStorage.setItem('bible_note', content);
-            alert('笔记已保存在当前浏览器！');
+            localStorage.setItem('bible_notes_data', document.getElementById('note-input').value);
+            alert('已保存');
         }
 
-        // 发表（模拟功能：打印到控制台或下载）
-        function publishNote() {
-            const content = document.getElementById('note-input').value;
-            if(!content) return alert("笔记内容为空");
-            
-            console.log("准备发表内容：", content);
-            alert("点击确定将笔记导出为文本文件。");
-            
-            const blob = new Blob([content], { type: "text/plain" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "我的圣经笔记.txt";
-            link.click();
+        function exportNote() {
+            const blob = new Blob([document.getElementById('note-input').value], {type: "text/plain"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "圣经笔记.txt";
+            a.click();
         }
+
+        window.onload = () => {
+            initNav();
+            document.getElementById('note-input').value = localStorage.getItem('bible_notes_data') || '';
+        };
     </script>
 </body>
 </html>
