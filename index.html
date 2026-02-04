@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>我的圣经笔记空间</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; display: flex; height: 100vh; background: #f4f4f4; }
+        /* 布局控制 */
+        .bible-reader { width: 50%; border-right: 2px solid #ddd; display: flex; flex-direction: column; background: white; }
+        .note-editor { width: 50%; padding: 20px; display: flex; flex-direction: column; background: #fafafa; }
+        
+        /* 头部样式 */
+        header { background: #333; color: white; padding: 15px; text-align: center; }
+        
+        /* 圣经内容区 */
+        #bible-content { flex: 1; overflow-y: auto; padding: 20px; line-height: 1.8; }
+        .verse { cursor: pointer; padding: 2px 5px; border-radius: 3px; }
+        .verse:hover { background: #e0f0ff; color: #007bff; }
+
+        /* 编辑器样式 */
+        textarea { flex: 1; padding: 15px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; resize: none; }
+        .controls { margin-top: 15px; display: flex; gap: 10px; }
+        
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; transition: 0.3s; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-publish { background: #007bff; color: white; }
+        .btn-save:hover { background: #218838; }
+    </style>
+</head>
+<body>
+
+    <div class="bible-reader">
+        <header>📖 圣经阅读 (和合本示例)</header>
+        <div id="bible-content">
+            <h3>创世记 1章</h3>
+            <p>
+                <span class="verse" onclick="copyVerse('创 1:1 起初，神创造天地。')">1 起初，神创造天地。</span><br>
+                <span class="verse" onclick="copyVerse('创 1:2 地是空虚混沌，渊面黑暗；神的灵运行在水面上。')">2 地是空虚混沌，渊面黑暗；神的灵运行在水面上。</span><br>
+                <span class="verse" onclick="copyVerse('创 1:3 神说：“要有光”，就有了光。')">3 神说：“要有光”，就有了光。</span>
+            </p>
+            <p style="color: #888; font-size: 0.9em;">(点击经文可快速插入笔记)</p>
+        </div>
+    </div>
+
+    <div class="note-editor">
+        <header>✍️ 我的灵修笔记</header>
+        <p>一边品饮一杯好的 **puerh**，一边记录你的心得：</p>
+        <textarea id="note-input" placeholder="在这里输入你的笔记..."></textarea>
+        
+        <div class="controls">
+            <button class="btn-save" onclick="saveNote()">保存到本地</button>
+            <button class="btn-publish" onclick="publishNote()">发表/导出</button>
+        </div>
+    </div>
+
+    <script>
+        // 自动加载上次保存的笔记
+        window.onload = () => {
+            document.getElementById('note-input').value = localStorage.getItem('bible_note') || '';
+        };
+
+        // 点击经文自动插入编辑器
+        function copyVerse(text) {
+            const editor = document.getElementById('note-input');
+            editor.value += "\n> " + text + "\n";
+            editor.focus();
+        }
+
+        // 保存到浏览器缓存
+        function saveNote() {
+            const content = document.getElementById('note-input').value;
+            localStorage.setItem('bible_note', content);
+            alert('笔记已保存在当前浏览器！');
+        }
+
+        // 发表（模拟功能：打印到控制台或下载）
+        function publishNote() {
+            const content = document.getElementById('note-input').value;
+            if(!content) return alert("笔记内容为空");
+            
+            console.log("准备发表内容：", content);
+            alert("点击确定将笔记导出为文本文件。");
+            
+            const blob = new Blob([content], { type: "text/plain" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "我的圣经笔记.txt";
+            link.click();
+        }
+    </script>
+</body>
+</html>
