@@ -109,7 +109,7 @@
       : esc(text);
     var toggle = noteHTML ? '<button class="note-toggle" data-v="' + vnum + '">注</button>' : "";
     var note = noteHTML
-      ? '<div class="note" id="note-' + id + '"><span class="note-ref">' + esc(noteLabel) + "</span>" + noteHTML + "</div>"
+      ? '<div class="note open" id="note-' + id + '"><span class="note-ref">' + esc(noteLabel) + "</span>" + noteHTML + "</div>"
       : "";
     return '<p class="' + cls + '" id="' + id + '"><span class="vnum">' + vnum + "</span>" +
       body + toggle + "</p>" + note;
