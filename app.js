@@ -51,10 +51,17 @@
       return r.text();
     });
   }
+  function tidy(s) {
+    // drop spaces after CJK punctuation (source-data artifact)
+    return String(s).replace(/([，；：。、）”】」])\s+/g, "$1");
+  }
   function loadBookBlob(bid) {
     if (bookCache[bid]) return Promise.resolve(bookCache[bid]);
     return fetchText("data/cuvz/" + bid + ".b64").then(b64ToBytes).then(gunzipJSON)
-      .then(function (chapters) { bookCache[bid] = chapters; return chapters; });
+      .then(function (chapters) {
+        chapters = chapters.map(function (vs) { return vs.map(tidy); });
+        bookCache[bid] = chapters; return chapters;
+      });
   }
   function loadNotesBlob(bid) {
     if (bid in notesCache) return Promise.resolve(notesCache[bid]);
