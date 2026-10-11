@@ -63,11 +63,29 @@
         bookCache[bid] = chapters; return chapters;
       });
   }
-  function loadNotesBlob(bid) {
-    if (bid in notesCache) return Promise.resolve(notesCache[bid]);
-    return fetchText("notes/" + bid + ".b64").then(b64ToBytes).then(gunzipJSON)
-      .then(function (n) { notesCache[bid] = n; return n; })
-      .catch(function () { notesCache[bid] = null; return null; });
+  function parseNotesMD(text, ch) {
+    var notes = {}, cur = null, buf = [];
+    text.split(/\r?\n/).forEach(function (line) {
+      var m = /^##(?!#)\s*(.+?)\s*$/.exec(line);
+      if (m) {
+        if (cur) notes[cur] = buf.join("\n").trim();
+        cur = (m[1] === "本章") ? (ch + ":0") : m[1];
+        buf = [];
+      } else if (cur) {
+        buf.push(line);
+      }
+    });
+    if (cur) notes[cur] = buf.join("\n").trim();
+    return notes;
+  }
+  function loadChapterNotes(bid, ch) {
+    var key = bid + ":" + ch;
+    if (key in notesCache) return Promise.resolve(notesCache[key]);
+    var path = "notes/" + bid + "-" + String(ch).padStart(3, "0") + ".md";
+    return fetchText(path).then(function (t) {
+      var n = parseNotesMD(t, ch);
+      notesCache[key] = n; return n;
+    }).catch(function () { notesCache[key] = null; return null; });
   }
 
   function bookById(id) { return BOOKMAP[id]; }
@@ -140,7 +158,7 @@
     if (!b || !ch || ch < 1 || ch > b.chapters) return vNotFound();
     crumb.innerHTML = '<a href="#/">全部书卷</a> / <a href="#/book/' + bid + '">' + esc(b.name) + "</a> / 第" + ch + "章";
     app.innerHTML = '<p class="loading">加载' + esc(b.name) + "第" + ch + "章…</p>";
-    Promise.all([loadBookBlob(bid), loadNotesBlob(bid)]).then(function (res) {
+    Promise.all([loadBookBlob(bid), loadChapterNotes(bid, ch)]).then(function (res) {
       var chapters = res[0], notes = res[1], verses = chapters[ch - 1];
       var html = "<h1 class='chapter-title'>" + esc(b.name) + " 第" + ch + "章</h1>" +
         '<p class="chapter-sub">和合本 · 简体</p>';
