@@ -25,11 +25,10 @@ index.html      整站 SPA 外壳
 app.js          路由 / 渲染 / 搜索逻辑
 styles.css      样式（含诗歌体悬挂缩进、手机适配）
 data/
-  books.json    66 卷元数据（中文名、章数、新旧约）
-  cuv/          每卷一 JSON：章 -> 节数组（简体和合本）
-  search_a.json ~ search_d.json   全文检索索引（4 分片，懒加载）
+  books.json    66 卷元数据（中文名、章数、新旧约、诗歌标记）
+  cuvz/         每卷一 .b64：gzip+base64 的章->节数组（简体和合本），按需加载解压
 notes/
-  <book>.json   笔记：键为 "章:节" / "章:起-止" / "章:0"（章注）
+  <book>.b64    笔记（gzip+base64）：键为 "章:节" / "章:起-止" / "章:0"（章注）
 ```
 
 ## 笔记格式
